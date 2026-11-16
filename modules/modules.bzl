@@ -13,6 +13,7 @@ MODULE_COPTS = [
 # The libraries whose headers third_party.cppm wraps, as `clice modularize` found
 # them; which target provides an include root is the build's knowledge.
 LIBRARIES = [
+    "//third_party/clang-include-cleaner",
     "@croaring",
     "@kotatsu//:cli",
     "@kotatsu//:cli_table",

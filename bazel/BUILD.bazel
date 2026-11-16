@@ -29,6 +29,7 @@ LLVM_LIBRARIES = [
     "clangDriver",
     "clangFormat",
     "clangFrontend",
+    "clangIncludeCleaner",
     "clangLex",
     "clangOptions",
     "clangSema",

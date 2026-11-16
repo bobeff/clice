@@ -63,6 +63,10 @@
 #include <cctype>
 #include <bitset>
 
+#include "clang-include-cleaner/Analysis.h"
+#include "clang-include-cleaner/IncludeSpeller.h"
+#include "clang-include-cleaner/Record.h"
+#include "clang-include-cleaner/Types.h"
 #include "clang-tidy/ClangTidyCheck.h"
 #include "clang-tidy/ClangTidyDiagnosticConsumer.h"
 #include "clang-tidy/ClangTidyModule.h"
@@ -151,6 +155,7 @@
 #include "clang/Sema/Template.h"
 #include "clang/Tooling/CompilationDatabase.h"
 #include "clang/Tooling/Core/Replacement.h"
+#include "clang/Tooling/Inclusions/HeaderIncludes.h"
 #include "clang/Tooling/Inclusions/StandardLibrary.h"
 #include "clang/Tooling/Syntax/Tokens.h"
 #include "llvm/ADT/APFloat.h"

@@ -181,6 +181,9 @@ struct CompileParams {
 
     /// See CompilationParams::skip_bodies.
     bool skip_bodies = false;
+
+    /// See CompilationParams::includes.
+    std::optional<includes::IncludeParams> includes;
 };
 
 /// Status of a stateful compile. Anything but `Done` is a non-result: the

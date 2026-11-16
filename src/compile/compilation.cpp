@@ -5,6 +5,7 @@ import :command.file_kind;
 import :command.invocation;
 import :compile.compilation;
 import :compile.diagnostic;
+import :compile.includes;
 import :compile.tidy;
 import :compile.tokens;
 import :support.logging;
@@ -1011,6 +1012,7 @@ CompilationStatus CompilationUnit::run() {
                                   params.kind != CompilationKind::Content,
                                   params.preamble_inactive_regions);
     }
+    record_includes();
 
     /// Add PPCallbacks to collect preprocessing information.
     instance->getPreprocessor().addPPCallbacks(directive_recorder());
@@ -1066,6 +1068,7 @@ CompilationStatus CompilationUnit::run() {
                                  params.preamble_inactive_regions);
     }
 
+    analyze_includes();
     run_tidy();
 
     return CompilationStatus::Completed;
@@ -1102,6 +1105,7 @@ std::unique_ptr<CompilationUnit> compile(CompilationParams params) {
             .skip_bodies = built.skip_bodies,
             .function_bodies = built.function_bodies,
             .instantiating = built.instantiating,
+            .includes = built.includes,
             .stop = built.stop,
         };
         again.input.pch = {};

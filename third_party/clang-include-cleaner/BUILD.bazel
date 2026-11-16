@@ -1,0 +1,13 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+# The headers of clang-tools-extra/include-cleaner of the LLVM release xclang
+# builds (MODULE.bazel), copied unchanged: libclang carries the library,
+# lib/libclangIncludeCleaner.a, but not them. An upgrade of xclang copies
+# them again.
+cc_library(
+    name = "clang-include-cleaner",
+    hdrs = glob(["include/clang-include-cleaner/*.h"]),
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    deps = ["@libclang//:headers"],
+)

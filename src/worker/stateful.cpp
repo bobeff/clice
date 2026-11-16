@@ -252,6 +252,7 @@ RequestResult<worker::CompileParams>
                 .skip_bodies = params.skip_bodies,
                 .function_bodies = params.indexing.function_bodies,
                 .preamble_inactive_regions = params.preamble_inactive_regions,
+                .includes = params.includes,
                 .stop = stop,
             };
             auto pch_mapping = use_precompiled(cp.input, params.pch, params.pcms);

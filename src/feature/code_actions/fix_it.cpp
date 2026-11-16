@@ -9,13 +9,13 @@ namespace clice::feature::action {
 
 namespace {
 
-/// Code as a fix's title shows it: its first line past the line breaks it
-/// starts with, cut short.
+/// Code as a fix's title shows it: its first line without the line breaks
+/// around it, cut short.
 std::string title_code(llvm::StringRef code) {
     if(code == "\n") {
         return R"(\n)";
     }
-    code = code.ltrim("\r\n");
+    code = code.trim("\r\n");
     auto shown = code.split('\n').first.take_front(50);
     return shown.size() == code.size() ? shown.str() : std::format("{}…", shown);
 }
@@ -44,14 +44,15 @@ std::string fix_title(llvm::StringRef content, const Diagnostic& diagnostic) {
 
 /// A fix's edits as the focus file takes them. clang-tidy inserts an
 /// include into a file without one at its first byte, which in a module
-/// unit is before its declaration, where no directive may go: there it
-/// goes where an added include goes. And a check whose fix removes code
-/// counts on the cleanup clang-tidy does as it applies the fix.
+/// unit is before its declaration, where no directive may go, and clice
+/// inserts every missing include there: these go where an added include
+/// goes. And a check whose fix removes code counts on the cleanup
+/// clang-tidy does as it applies the fix.
 std::vector<TextReplacement> fix_edits(CompilationUnit& unit,
                                        const Diagnostic& main,
                                        llvm::ArrayRef<TextReplacement> fix) {
     std::vector<TextReplacement> edits(fix.begin(), fix.end());
-    if(unit.is_named_module()) {
+    if(unit.is_named_module() || main.id.source == DiagnosticSource::Clice) {
         std::optional<IncludeInsertion> insertion;
         for(auto& edit: edits) {
             llvm::StringRef header = edit.text;

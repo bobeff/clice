@@ -40,6 +40,8 @@
             "default": {
                 "clang_tidy": true,
                 "slow_clang_tidy_checks": null,
+                "unused_includes": false,
+                "missing_includes": false,
                 "suppress": []
             }
         },
@@ -214,6 +216,16 @@
                     ],
                     "description": "Also run on open files the checks the `.clang-tidy` enables that are too slow for an editor or not measured for one (`misc-const-correctness` doubles the time a large file takes to compile): every compile of the file waits for them. Unset, clice names such checks once when it leaves them out; `false` leaves them out silently. `clice lint` runs them either way.",
                     "default": null
+                },
+                "unused_includes": {
+                    "type": "boolean",
+                    "description": "Warn on the `#include`s of open files that provide nothing the file uses directly, as clangd's `UnusedIncludes: Strict` does, and offer to remove them. A header written in angle brackets is checked only when it is a standard library header, and `// IWYU pragma: keep` on an include keeps it. Files `clice lint` does not check get none.",
+                    "default": false
+                },
+                "missing_includes": {
+                    "type": "boolean",
+                    "description": "Point at what open files use from headers they do not include directly, as clangd's `MissingIncludes: Strict` does, and offer to include them. The IWYU pragmas of the headers (`private`, `export`) choose the header to include. Files `clice lint` does not check get none.",
+                    "default": false
                 },
                 "suppress": {
                     "type": "array",

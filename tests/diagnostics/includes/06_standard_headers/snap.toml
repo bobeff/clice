@@ -1,0 +1,11 @@
+[test."main.cpp"]
+diagnostics = [
+    {
+        at = "⟦#include <vector>⟧",
+        severity = "warning",
+        message = "included header vector is not used directly",
+        source = "clice",
+        code = "unused-includes",
+        tags = ["Unnecessary"],
+    },
+]

@@ -59,6 +59,7 @@ void open_with_overlay(std::source_location location = std::source_location::cur
                                                      {},
                                                      {},
                                                      {},
+                                                     {},
                                                      {})));
 
     kind = CompilationKind::Content;

@@ -4804,6 +4804,29 @@ using enum ::clang::frontend::ActionKind;
 using enum ::clang::frontend::IncludeDirGroup;
 }
 
+export namespace clang::include_cleaner {
+using ::clang::include_cleaner::AnalysisResults;
+using ::clang::include_cleaner::Header;
+using ::clang::include_cleaner::Include;
+using ::clang::include_cleaner::IncludeSpeller;
+using ::clang::include_cleaner::IncludeSpellingStrategy;
+using ::clang::include_cleaner::Includes;
+using ::clang::include_cleaner::Macro;
+using ::clang::include_cleaner::PragmaIncludes;
+using ::clang::include_cleaner::RecordedAST;
+using ::clang::include_cleaner::RecordedPP;
+using ::clang::include_cleaner::RefType;
+using ::clang::include_cleaner::Symbol;
+using ::clang::include_cleaner::SymbolReference;
+using ::clang::include_cleaner::UsedSymbolCB;
+using ::clang::include_cleaner::analyze;
+using ::clang::include_cleaner::fixIncludes;
+using ::clang::include_cleaner::headersForSymbol;
+using ::clang::include_cleaner::operator<<;
+using ::clang::include_cleaner::spellHeader;
+using ::clang::include_cleaner::walkUsed;
+}
+
 export namespace clang::interp {
 using ::clang::interp::Context;
 }
@@ -5040,6 +5063,9 @@ using ::clang::tooling::Diagnostic;
 using ::clang::tooling::DiagnosticMessage;
 using ::clang::tooling::FileByteRange;
 using ::clang::tooling::FixedCompilationDatabase;
+using ::clang::tooling::HeaderIncludes;
+using ::clang::tooling::IncludeCategoryManager;
+using ::clang::tooling::IncludeDirective;
 using ::clang::tooling::IncludeStyle;
 using ::clang::tooling::Range;
 using ::clang::tooling::Replacement;

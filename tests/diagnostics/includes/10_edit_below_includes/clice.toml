@@ -1,0 +1,3 @@
+[diagnostics]
+unused_includes = true
+missing_includes = true

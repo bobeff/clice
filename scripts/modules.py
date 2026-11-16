@@ -86,10 +86,11 @@ def repo(external, name):
     return sorted({f"{link}/**", f"{os.path.realpath(link)}/**"})
 
 
-def partition(output_base, clice):
+def partition(output_base, execroot, clice):
     """The libraries' partition on this machine: Bazel's output base and the
     repository contents cache differ by platform, so the globs come from
-    where the build put each library. The index reads the compiler's own
+    where the build put each library. The headers third_party/ copies in
+    come through the execution root. The index reads the compiler's own
     headers from clice's resource directory."""
     external = f"{output_base}/external"
     xclang = f"{external}/xclang++xclang+xclang_*"
@@ -106,6 +107,7 @@ def partition(output_base, clice):
         "lmdb+",
     ):
         deps += repo(external, name)
+    deps += repo(f"{execroot}/third_party/clang-include-cleaner", "include")
     return {
         "modules": [
             {"name": "libc", "files": [f"{xclang}/**/include/c++/v1/*.h"]},
@@ -178,7 +180,7 @@ def generate(name, clice):
     with open(f"{work}/clice.toml", "w") as config:
         config.write('[[rules]]\ncompile_commands = ["compile_commands.json"]\n')
     with open(f"{work}/partition.json", "w") as spec:
-        json.dump(partition(output_base, clice), spec, indent=2)
+        json.dump(partition(output_base, execroot, clice), spec, indent=2)
     std = [
         os.path.dirname(path)
         for path in glob.glob(

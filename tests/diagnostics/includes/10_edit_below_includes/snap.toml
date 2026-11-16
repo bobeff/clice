@@ -1,0 +1,21 @@
+[test.before]
+diagnostics = [
+    {
+        at = '⟦#include "clock.h"⟧',
+        severity = "warning",
+        message = "included header clock.h is not used directly",
+        source = "clice",
+        code = "unused-includes",
+    },
+]
+
+[test.after]
+diagnostics = [
+    {
+        at = '⟦#include "timer.h"⟧',
+        severity = "warning",
+        message = "included header timer.h is not used directly",
+        source = "clice",
+        code = "unused-includes",
+    },
+]

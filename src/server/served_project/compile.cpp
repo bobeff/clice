@@ -643,6 +643,14 @@ async::task<std::optional<Result>>
     if(tidy_dispatch) {
         params.tidy = tidy_config->params;
     }
+    if(const auto& diagnostics = project.settings.diagnostics;
+       (diagnostics.unused_includes || diagnostics.missing_includes) &&
+       project.rules.lintable(project.file_table.resolve(path_id))) {
+        params.includes = includes::IncludeParams{
+            .unused = diagnostics.unused_includes,
+            .missing = diagnostics.missing_includes,
+        };
+    }
     resolution = co_await project.resolve_with_trees(
         path_id,
         [&] {
@@ -761,6 +769,9 @@ async::task<std::optional<Result>> ServedProject::CompileAttempt::pch() {
     if(preamble_index) {
         params.preamble_inactive_regions = preamble_index->inactive_regions;
         params.open_conditionals = preamble_index->open_conditionals;
+        if(params.includes && preamble_index->matches(params.text)) {
+            params.includes->preamble = preamble_index->includes;
+        }
     }
     co_return std::nullopt;
 }

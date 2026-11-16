@@ -2,6 +2,7 @@
 
 module clice:worker.preamble_index;
 
+import :compile.compilation;
 import :feature.document_links;
 import :index.indexing.tu_index;
 import :support.prelude;
@@ -38,6 +39,10 @@ struct PreambleIndex {
     /// raises them again.
     std::string diagnostics;
 
+    /// What the build learned of the includes
+    /// (CompilationUnit::preamble_includes).
+    std::optional<includes::PreambleIncludes> includes;
+
     /// Whether `text` still begins with the exact preamble the pair was
     /// built from: what gates serving any of it against a live buffer,
     /// whose offsets the entries are. Compared by hash, the text itself
@@ -55,7 +60,8 @@ std::vector<std::byte> encode_preamble_index(llvm::StringRef preamble_text,
                                              llvm::ArrayRef<feature::DocumentLink> links,
                                              llvm::ArrayRef<std::uint32_t> inactive_regions,
                                              llvm::ArrayRef<std::uint8_t> open_conditionals,
-                                             llvm::StringRef diagnostics);
+                                             llvm::StringRef diagnostics,
+                                             llvm::StringRef includes);
 
 /// Open a `.pch.idx` (memory-mapped). Null when the file is unreadable,
 /// structurally invalid, of a different format version, or — unless this

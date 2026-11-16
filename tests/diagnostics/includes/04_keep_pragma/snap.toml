@@ -1,0 +1,11 @@
+[test."main.cpp"]
+diagnostics = [
+    {
+        at = '⟦#include "extras.h"⟧',
+        severity = "warning",
+        message = "included header extras.h is not used directly",
+        source = "clice",
+        code = "unused-includes",
+        tags = ["Unnecessary"],
+    },
+]

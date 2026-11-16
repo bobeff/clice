@@ -1,5 +1,6 @@
 module clice;
 
+import :compile.compilation;
 import :compile.diagnostic;
 import :compile.inactive_regions;
 import :feature.document_links;
@@ -13,6 +14,7 @@ import :index.indexing.tu_index;
 import :project.project;
 import :semantic.identity;
 import :semantic.selection;
+import :support.json;
 import :support.logging;
 import :support.text;
 import :unittests.utils.temp_dir;
@@ -2618,7 +2620,7 @@ std::string blob_of_version(std::uint32_t version) {
 /// A `.pch.idx` whose TU index is of `version`.
 std::string pair_of_version(std::uint32_t version) {
     auto bytes =
-        worker::encode_preamble_index("", as_bytes(blob_of_version(version)), {}, {}, {}, {});
+        worker::encode_preamble_index("", as_bytes(blob_of_version(version)), {}, {}, {}, {}, {});
     return std::string(as_chars(bytes));
 }
 
@@ -2634,6 +2636,7 @@ std::vector<feature::DocumentLink> links;
 std::vector<std::uint32_t> inactive;
 std::vector<std::uint8_t> conditionals;
 std::string diagnostics;
+std::string includes;
 
 /// Persist the unit's index with this state as `name`, a `.pch.idx`, and
 /// open it through the production gate.
@@ -2641,14 +2644,16 @@ void store(llvm::StringRef name,
            llvm::ArrayRef<feature::DocumentLink> links = {},
            llvm::ArrayRef<std::uint32_t> inactive = {},
            llvm::ArrayRef<std::uint8_t> conditionals = {},
-           llvm::StringRef diagnostics = {}) {
+           llvm::StringRef diagnostics = {},
+           llvm::StringRef includes = {}) {
     dir.touch(name,
               as_chars(worker::encode_preamble_index(unit->focus_file().content(),
                                                      index::build_tu_index(*unit),
                                                      links,
                                                      inactive,
                                                      conditionals,
-                                                     diagnostics)));
+                                                     diagnostics,
+                                                     includes)));
     pair = worker::open_preamble_index(dir.path(name));
     ZASSERT(pair != nullptr);
     state = &pair->index;
@@ -2666,8 +2671,13 @@ void build_state(std::source_location location = std::source_location::current()
     inactive = {4, 9, 30, 42};
     conditionals = {1, 0, 2};
     diagnostics = R"([{"range":{},"message":"'M' macro redefined"}])";
+    includes::PreambleIncludes recorded;
+    recorded.includes.push_back(
+        {.spelled = "foo.h", .resolved = "/include/foo.h", .offset = 1, .line = 2});
+    recorded.kept = {"/include/foo.h"};
+    includes = json::to_string(recorded, path_json).value_or("");
 
-    store("state.pch.idx", links, inactive, conditionals, diagnostics);
+    store("state.pch.idx", links, inactive, conditionals, diagnostics, includes);
 }
 
 index::SymbolHash hash_of(llvm::StringRef name,
@@ -2849,6 +2859,14 @@ int main() { return 0; }
     ZEXPECT(pair->inactive_regions == inactive);
     ZEXPECT(pair->open_conditionals == conditionals);
     ZEXPECT(pair->diagnostics == diagnostics);
+
+    ZASSERT(pair->includes.has_value());
+    ZASSERT(pair->includes->includes.size() == 1);
+    ZEXPECT(pair->includes->includes[0].spelled == "foo.h");
+    ZEXPECT(pair->includes->includes[0].resolved == "/include/foo.h");
+    ZEXPECT(pair->includes->includes[0].offset == 1);
+    ZEXPECT(pair->includes->includes[0].line == 2);
+    ZEXPECT(pair->includes->kept == std::vector<std::string>{"/include/foo.h"});
 
     // A TU index with no header sections answers lookups with silence,
     // not UB.

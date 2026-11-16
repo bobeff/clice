@@ -1,0 +1,13 @@
+[test."main.cpp"]
+diagnostics = []
+
+[test."widget.h"]
+diagnostics = [
+    {
+        at = '⟦#include "unused.h"⟧',
+        severity = "warning",
+        message = "included header unused.h is not used directly",
+        source = "clice",
+        code = "unused-includes",
+    },
+]

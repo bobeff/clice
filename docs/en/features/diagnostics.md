@@ -2,7 +2,7 @@
 
 ## Core
 
-Diagnostics are clang's errors and warnings on an open file, clang-tidy's findings, and clice's own messages about the setup.
+Diagnostics are clang's errors and warnings on an open file, clang-tidy's findings, and clice's own messages about the setup and, when turned on, about the file's includes.
 
 - A client that pulls diagnostics (`textDocument/diagnostic`) asks for them; any other client gets them pushed when a compile finishes.
 - Every missing `#include` is reported, not just the first, and the code after it is still checked.
@@ -115,7 +115,7 @@ tests/diagnostics/guidance/01_no_database
 ## Tags
 
 - `Deprecated` marks `-Wdeprecated` diagnostics and clang-tidy findings about deprecated headers and aliases.
-- `Unnecessary` marks unused variable and parameter warnings and `misc-unused-*` findings.
+- `Unnecessary` marks unused variable and parameter warnings, `misc-unused-*` findings and unused includes.
 
 ## Publishing
 
@@ -150,7 +150,7 @@ tests/diagnostics/suppression/01_by_code
 
 ## Diagnostic Actions
 
-- The fixes the compiler and clang-tidy attach to their diagnostics are offered as quick fixes.
+- The fixes the compiler and clang-tidy attach to their diagnostics, and those of unused and missing includes, are offered as quick fixes.
 - A clang-tidy fix is cleaned up as `clang-tidy --fix` cleans it: no `,` or `:` left dangling by what it removes.
 - An include a fix adds to a module unit goes into its global module fragment, opened once.
 
@@ -272,3 +272,99 @@ tests/diagnostics/clang_tidy/20_slow_checks
 - clang-tidy's warnings that originate in macros of system headers are left out ([clangd#1587](https://github.com/clangd/clangd/issues/1587), [clangd#2000](https://github.com/clangd/clangd/issues/2000)).
 - A malformed `.clang-tidy` is reported at the top of the files it configures, and runs no check ([clangd#2313](https://github.com/clangd/clangd/issues/2313)).
 - `clice lint` lists the warnings of the whole project ([clangd#1973](https://github.com/clangd/clangd/issues/1973)).
+
+## Unused and Missing Includes
+
+Open files can show the includes they use nothing of and the names they use from headers they do not include, as clangd's `UnusedIncludes: Strict` and `MissingIncludes: Strict` do.
+
+<!-- BEGIN GENERATED ITEMS: diagnostics/includes -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**Unused includes**
+
+`unused_includes = true` fades the includes a file uses nothing of
+
+An include whose header provides nothing the file uses directly is faded as unnecessary, with a quick fix that removes it.
+
+```case
+tests/diagnostics/includes/01_unused_include
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**Missing includes**
+
+`missing_includes = true` points at what the file uses without including it
+
+A name the file uses from a header it reaches only through another include is pointed out, with a quick fix that includes that header after the file's leading includes.
+
+```case
+tests/diagnostics/includes/02_missing_include
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**Macros count as uses**
+
+A header whose macro the file expands or tests is used
+
+A macro the file expands, or tests in an `#if`, uses the header that defines it, as a name it uses does.
+
+```case
+tests/diagnostics/includes/03_macro_uses
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**Keeping an include**
+
+An include marked `IWYU pragma: keep` is never reported unused
+
+A `// IWYU pragma: keep` comment on an include keeps it, for a header included for what including it does rather than for what it declares.
+
+```case
+tests/diagnostics/includes/04_keep_pragma
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**Private headers**
+
+A header marked private is included through the header it names
+
+When the header declaring what the file uses says `// IWYU pragma: private, include "…"`, the quick fix includes the header it names instead.
+
+```case
+tests/diagnostics/includes/05_private_header
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**Standard library headers**
+
+Of the headers in angle brackets, only the standard library's are checked
+
+An unused standard library header is reported like any other, while the headers of other libraries included in angle brackets are left alone.
+
+```case
+tests/diagnostics/includes/06_standard_headers
+```
+
+<!-- END CAPABILITY -->
+
+<!-- END GENERATED ITEMS -->
+
+- Each is off unless its option in `[diagnostics]`, `unused_includes` or `missing_includes`, turns it on.
+- A header written in an `#include` the preprocessor skips is never reported missing, as in clangd.
+- A header that compiles only in its includer's context shows neither, and `clice lint` reports neither.

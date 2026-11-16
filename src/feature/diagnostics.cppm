@@ -36,6 +36,26 @@ struct DiagnosticsOptions {
                   "silently. `clice lint` runs them either way.")
     std::optional<bool> slow_clang_tidy_checks;
 
+    KANNOTATE(&unused_includes,
+              description =
+                  "Warn on the `#include`s of open files that provide "
+                  "nothing the file uses directly, as clangd's "
+                  "`UnusedIncludes: Strict` does, and offer to remove "
+                  "them. A header written in angle brackets is checked "
+                  "only when it is a standard library header, and "
+                  "`// IWYU pragma: keep` on an include keeps it. Files "
+                  "`clice lint` does not check get none.")
+    bool unused_includes = false;
+
+    KANNOTATE(&missing_includes,
+              description =
+                  "Point at what open files use from headers they do not "
+                  "include directly, as clangd's `MissingIncludes: Strict` "
+                  "does, and offer to include them. The IWYU pragmas of "
+                  "the headers (`private`, `export`) choose the header to "
+                  "include. Files `clice lint` does not check get none.")
+    bool missing_includes = false;
+
     KANNOTATE(&suppress,
               description =
                   "Diagnostics open files do not show, by their code: a "

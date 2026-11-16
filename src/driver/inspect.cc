@@ -999,7 +999,9 @@ std::expected<CompilationInput, std::string> project_input(const SourceFile& fil
 /// hiding in the preamble. It skips the function bodies the server's
 /// preamble leaves out, and loads the precompiled header the build declares
 /// (build_pch). With `diagnostics.clang_tidy` the compile runs the file's
-/// clang-tidy configuration as the server's does.
+/// clang-tidy configuration as the server's does, and with
+/// `diagnostics.unused_includes` or `missing_includes` it reports the
+/// includes as the server's does.
 void run_feature(FileEntry& entry,
                  const FeatureSpec& spec,
                  const SourceFile& file,
@@ -1019,6 +1021,12 @@ void run_feature(FileEntry& entry,
             LOG_WARN("{}", resolution.error);
         }
         params.tidy = std::move(resolution.params);
+    }
+    if(settings.diagnostics.unused_includes || settings.diagnostics.missing_includes) {
+        params.includes = includes::IncludeParams{
+            .unused = settings.diagnostics.unused_includes,
+            .missing = settings.diagnostics.missing_includes,
+        };
     }
 
     auto unit = clice::compile(std::move(params));

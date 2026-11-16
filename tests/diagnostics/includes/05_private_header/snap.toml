@@ -1,0 +1,22 @@
+[test."main.cpp"]
+diagnostics = [
+    {
+        at = "⟦Widget⟧ button;",
+        severity = "information",
+        message = 'No header providing "Widget" is directly included',
+        source = "clice",
+        code = "missing-includes",
+    },
+]
+
+[[test.fixes.code_actions]]
+kind = "quickfix"
+title = "insert '#include \"widget.h\"'"
+
+[test.fixes.code_actions.edits]
+"main.cpp" = '''
+ #include "panel.h"
++#include "widget.h"
+
+ Panel panel;
+'''

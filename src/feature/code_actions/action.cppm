@@ -53,8 +53,9 @@ void expand_macro(CompilationUnit& unit, LocalSourceRange selection, std::vector
 /// Anchored on an unresolved name the compiler diagnosed at the selection.
 void add_include(CompilationUnit& unit, LocalSourceRange selection, std::vector<CodeAction>& out);
 
-/// The fixes the diagnostics on the selection carry, the compiler's and
-/// clang-tidy's: each diagnostic's own and those of its notes.
+/// The fixes the diagnostics on the selection carry, the compiler's,
+/// clang-tidy's and those of the includes: each diagnostic's own and those
+/// of its notes.
 void fix_its(CompilationUnit& unit, LocalSourceRange selection, std::vector<CodeAction>& out);
 
 IncludeInsertion include_insertion(CompilationUnit& unit);

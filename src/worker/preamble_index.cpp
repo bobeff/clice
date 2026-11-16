@@ -3,6 +3,7 @@ module clice;
 import :feature.document_links;
 import :index.format;
 import :index.indexing.tu_index;
+import :support.json;
 import :support.text;
 import :syntax.token;
 import :vfs.file_system;
@@ -30,6 +31,8 @@ struct PreambleStateOf {
     Seq<std::uint32_t> inactive_regions;
     Seq<std::uint8_t> open_conditionals;
     Seq<char> diagnostics;
+    /// A JSON includes::PreambleIncludes; empty for none.
+    Seq<char> includes;
 };
 
 using PreambleState = PreambleStateOf<codec::blob::Owned>;
@@ -49,7 +52,8 @@ std::vector<std::byte> encode_preamble_index(llvm::StringRef preamble_text,
                                              llvm::ArrayRef<feature::DocumentLink> links,
                                              llvm::ArrayRef<std::uint32_t> inactive_regions,
                                              llvm::ArrayRef<std::uint8_t> open_conditionals,
-                                             llvm::StringRef diagnostics) {
+                                             llvm::StringRef diagnostics,
+                                             llvm::StringRef includes) {
     PreambleState state{
         .format_version = index::index_format_version,
         .text_hash = llvm::xxh3_64bits(preamble_text),
@@ -57,6 +61,7 @@ std::vector<std::byte> encode_preamble_index(llvm::StringRef preamble_text,
         .inactive_regions = inactive_regions.vec(),
         .open_conditionals = open_conditionals.vec(),
         .diagnostics = diagnostics.str(),
+        .includes = includes.str(),
     };
     for(auto& link: links) {
         state.links.push_back({.range = link.range, .target = link.target});
@@ -115,6 +120,12 @@ std::shared_ptr<PreambleIndex> open_preamble_index(llvm::StringRef path, bool ve
     result->inactive_regions = llvm::ArrayRef<std::uint32_t>(state->inactive_regions).vec();
     result->open_conditionals = llvm::ArrayRef<std::uint8_t>(state->open_conditionals).vec();
     result->diagnostics = std::string(llvm::StringRef(state->diagnostics));
+    if(llvm::StringRef recorded(state->includes); !recorded.empty()) {
+        result->includes.emplace();
+        if(!json::from_string(recorded, *result->includes)) {
+            return nullptr;
+        }
+    }
     result->mapped = std::move(*buffer);
     return result;
 }

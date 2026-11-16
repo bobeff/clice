@@ -73,6 +73,94 @@ class ClangTidyChecker;
 
 }  // namespace tidy
 
+namespace includes {
+
+/// What a preamble's build learned of the includes: those its part of the
+/// focus file writes, the macros it uses, and the IWYU pragmas of the files
+/// it enters. A Content compile loading the PCH reads none of it again.
+/// Plain data: it travels in the PCH's index and in worker requests.
+struct PreambleIncludes {
+    struct Include {
+        /// The name between the delimiters.
+        std::string spelled;
+
+        /// The file it entered, as the file manager names it; empty when
+        /// none was found.
+        std::string resolved;
+
+        /// Where its `#` is.
+        std::uint32_t offset = 0;
+
+        /// Its 1-based line.
+        std::uint32_t line = 0;
+
+        bool angled = false;
+    };
+
+    /// A macro's name where the focus file writes it.
+    struct MacroUse {
+        std::string name;
+
+        std::uint32_t offset = 0;
+
+        /// Only tested (`#ifdef`, `defined`): the code may not need the
+        /// macro.
+        bool tested = false;
+    };
+
+    /// A header `IWYU pragma: private` marks.
+    struct PrivateHeader {
+        std::string file;
+
+        /// The header to include instead, with its delimiters; empty for
+        /// none.
+        std::string replacement;
+    };
+
+    /// A header `IWYU pragma: export` makes others provide.
+    struct ExportedHeader {
+        /// The file, or a standard library header's name with its angle
+        /// brackets.
+        std::string header;
+
+        /// The files providing it.
+        std::vector<std::string> exporters;
+    };
+
+    std::vector<Include> includes;
+
+    std::vector<MacroUse> macros;
+
+    std::vector<PrivateHeader> private_headers;
+
+    std::vector<ExportedHeader> exported;
+
+    std::vector<ExportedHeader> exported_standard;
+
+    /// The files never reported unused: kept or exported by a pragma, or
+    /// the focus file's own header.
+    std::vector<std::string> kept;
+
+    /// The headers that do not compile alone, which the files including
+    /// them provide for.
+    std::vector<std::string> not_self_contained;
+};
+
+/// Which of the focus file's includes a Content compile reports: those it
+/// uses nothing of, and the headers it uses without including them.
+struct IncludeParams {
+    bool unused = false;
+
+    bool missing = false;
+
+    /// What the preamble the compile loads learned, see PreambleIncludes.
+    std::optional<PreambleIncludes> preamble;
+};
+
+struct IncludeRecorder;
+
+}  // namespace includes
+
 enum class CompilationKind : std::uint8_t {
     /// Only preprocess the source file: directives are available, AST
     /// nodes are not.
@@ -273,6 +361,10 @@ struct CompilationParams {
     /// Inactive regions of the consumed PCH's preamble share (flat
     /// begin/end offset pairs): the `#include`s there were never entered.
     std::vector<std::uint32_t> preamble_inactive_regions;
+
+    /// Content: report the focus file's unused and missing includes among
+    /// the diagnostics.
+    std::optional<includes::IncludeParams> includes;
 
     /// Set to stop the compile, an old one a newer request replaces.
     std::shared_ptr<std::atomic_bool> stop = std::make_shared<std::atomic_bool>(false);
@@ -630,10 +722,15 @@ public:
     auto macro_definitions(llvm::StringRef name) -> llvm::SmallVector<const clang::MacroInfo*>;
 
     /// The diagnostics the compile reported, each with its notes: the
-    /// compiler's, and clang-tidy's findings in the editor shape. Those a
-    /// suppression comment hides are left out, and a finding reported more
-    /// than once is kept once.
+    /// compiler's, clang-tidy's findings in the editor shape, and the
+    /// unused and missing includes CompilationParams::includes asks for.
+    /// Those a suppression comment hides are left out, and a finding
+    /// reported more than once is kept once.
     auto diagnostics() -> llvm::ArrayRef<Diagnostic>;
+
+    /// Preamble: what the build learned of the includes, for the Content
+    /// compiles loading the PCH; none when the build recorded nothing.
+    auto preamble_includes() -> std::optional<includes::PreambleIncludes>;
 
     /// The findings of a batch clang-tidy run, the compiler's diagnostics
     /// among them, as clang-tidy reports them but in the words diagnostics()
@@ -722,6 +819,14 @@ private:
     /// The callbacks filling collected_directives and absent_paths, see
     /// directive.cpp.
     std::unique_ptr<clang::PPCallbacks> directive_recorder();
+
+    /// Record the includes, the macros and the IWYU pragmas the include
+    /// analysis reads, see includes.cpp.
+    void record_includes();
+
+    /// Add the unused and missing includes to collected_diagnostics, see
+    /// includes.cpp.
+    void analyze_includes();
 
     auto SM() -> clang::SourceManager& {
         return instance->getSourceManager();
@@ -892,6 +997,9 @@ private:
     std::vector<const clang::Decl*> collected_instantiations;
 
     std::unique_ptr<tidy::ClangTidyChecker> checker;
+
+    /// See record_includes.
+    std::unique_ptr<includes::IncludeRecorder> include_recorder;
 };
 
 /// The file a compile serves: the one the user opened, a header compiled

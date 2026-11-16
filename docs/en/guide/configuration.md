@@ -169,6 +169,26 @@ Also run on open files the checks the `.clang-tidy` enables that are too slow fo
 
 <div class="config-option">
 
+| Option            | Type   | Default |
+| ----------------- | ------ | ------- |
+| `unused_includes` | `bool` | `false` |
+
+Warn on the `#include`s of open files that provide nothing the file uses directly, as clangd's `UnusedIncludes: Strict` does, and offer to remove them. A header written in angle brackets is checked only when it is a standard library header, and `// IWYU pragma: keep` on an include keeps it. Files `clice lint` does not check get none.
+
+</div>
+
+<div class="config-option">
+
+| Option             | Type   | Default |
+| ------------------ | ------ | ------- |
+| `missing_includes` | `bool` | `false` |
+
+Point at what open files use from headers they do not include directly, as clangd's `MissingIncludes: Strict` does, and offer to include them. The IWYU pragmas of the headers (`private`, `export`) choose the header to include. Files `clice lint` does not check get none.
+
+</div>
+
+<div class="config-option">
+
 | Option     | Type              | Default |
 | ---------- | ----------------- | ------- |
 | `suppress` | `array of string` | `[]`    |

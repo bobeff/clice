@@ -169,6 +169,26 @@ clice 在独立的 worker 进程中执行编译。前台 worker 负责让已打�
 
 <div class="config-option">
 
+| 选项              | 类型   | 默认值  |
+| ----------------- | ------ | ------- |
+| `unused_includes` | `bool` | `false` |
+
+与 clangd 的 `UnusedIncludes: Strict` 一样，若已打开文件中的某条 `#include` 未提供任何该文件直接使用的内容，则对其发出警告，并提供删除它的快速修复。以尖括号包含的头文件只有是标准库头文件时才会检查；带有 `// IWYU pragma: keep` 注释的包含指令会被保留。`clice lint` 不检查的文件不会收到此类诊断。
+
+</div>
+
+<div class="config-option">
+
+| 选项               | 类型   | 默认值  |
+| ------------------ | ------ | ------- |
+| `missing_includes` | `bool` | `false` |
+
+与 clangd 的 `MissingIncludes: Strict` 一样，若已打开文件用到的内容来自它未直接包含的头文件，则予以指出，并提供包含该头文件的快速修复。要包含哪个头文件，由各头文件中的 IWYU pragma（`private`、`export`）决定。`clice lint` 不检查的文件不会收到此类诊断。
+
+</div>
+
+<div class="config-option">
+
 | 选项       | 类型              | 默认值 |
 | ---------- | ----------------- | ------ |
 | `suppress` | `array of string` | `[]`   |

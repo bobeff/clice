@@ -45,7 +45,7 @@ static void hold_recent(std::shared_ptr<const llvm::MemoryBuffer> mapping) {
 }
 
 /// Serialize the preamble's index blob (full index + document links
-/// + inactive regions + diagnostics) into a string. Runs while the freshly parsed AST
+/// + inactive regions + diagnostics + includes) into a string. Runs while the freshly parsed AST
 /// is still in memory — the only moment the preamble's index is
 /// obtainable without deserializing the whole PCH. The file write
 /// happens separately, after the PCH itself is flushed.
@@ -56,6 +56,10 @@ static std::vector<std::byte> serialize_preamble_index(CompilationUnit& unit,
     auto inactive = inactive_regions(unit, {}, 0, preamble_bound);
     auto links_ms = links_timer.precise_ms();
     auto diagnostics = to_client_json(feature::diagnostics(unit), "[]");
+    std::string includes;
+    if(auto recorded = unit.preamble_includes()) {
+        includes = json::to_string(*recorded, path_json).value_or("");
+    }
 
     Timer blob_timer;
     // The preamble compile remaps the buffer truncated at the bound, so the
@@ -66,7 +70,8 @@ static std::vector<std::byte> serialize_preamble_index(CompilationUnit& unit,
                                               links,
                                               inactive.regions,
                                               inactive.open_stack,
-                                              diagnostics);
+                                              diagnostics,
+                                              includes);
     LOG_PERF("index_detail",
              "op=preamble links_ms={:.2f} blob_ms={:.2f} bytes={}",
              links_ms,

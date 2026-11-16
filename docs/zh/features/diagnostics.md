@@ -2,7 +2,7 @@
 
 ## 核心
 
-诊断包含已打开文件上 clang 报告的错误与警告、clang-tidy 的检查结果，以及 clice 自身关于项目配置的提示消息。
+诊断包含已打开文件上 clang 报告的错误与警告、clang-tidy 的检查结果，以及 clice 自身关于项目配置的提示消息；启用相应选项后，还包括关于该文件包含指令的提示消息。
 
 - 支持拉取诊断（`textDocument/diagnostic`）的客户端按需主动请求；其余客户端则在每次编译完成时由服务端推送。
 - 每个缺失的 `#include` 都会报告，而不只是第一个，其后的代码仍照常检查。
@@ -115,7 +115,7 @@ tests/diagnostics/guidance/01_no_database
 ## 标签
 
 - `Deprecated` 标记 `-Wdeprecated` 诊断以及涉及已弃用头文件和别名的 clang-tidy 检查结果。
-- `Unnecessary` 标记未使用的变量和参数警告以及 `misc-unused-*` 检查结果。
+- `Unnecessary` 标记未使用的变量和参数警告、`misc-unused-*` 检查结果以及未使用的包含指令。
 
 ## 发布
 
@@ -150,7 +150,7 @@ tests/diagnostics/suppression/01_by_code
 
 ## 诊断操作
 
-- 编译器与 clang-tidy 附在诊断上的修复建议会作为快速修复提供。
+- 编译器与 clang-tidy 附在诊断上的修复建议，以及针对未使用和缺失的包含指令的修复，都会作为快速修复提供。
 - clang-tidy 的修复会按 `clang-tidy --fix` 的方式做清理：移除代码后不会留下悬空的 `,` 或 `:`。
 - 修复向模块单元新增的 include 会放入其全局模块片段，且该片段只开启一次。
 
@@ -272,3 +272,99 @@ tests/diagnostics/clang_tidy/20_slow_checks
 - 源自系统头文件中宏的 clang-tidy 警告会被过滤（[clangd#1587](https://github.com/clangd/clangd/issues/1587)、[clangd#2000](https://github.com/clangd/clangd/issues/2000)）。
 - 格式有误的 `.clang-tidy` 会在受其配置的文件顶部报错，且不运行任何检查（[clangd#2313](https://github.com/clangd/clangd/issues/2313)）。
 - `clice lint` 列出整个项目的警告（[clangd#1973](https://github.com/clangd/clangd/issues/1973)）。
+
+## 未使用与缺失的包含指令
+
+与 clangd 的 `UnusedIncludes: Strict` 和 `MissingIncludes: Strict` 一样，已打开的文件可以显示哪些包含指令引入的内容完全没有用到，以及哪些用到的名称来自文件自身未包含的头文件。
+
+<!-- BEGIN GENERATED ITEMS: diagnostics/includes -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**未使用的包含指令**
+
+`unused_includes = true` 会将文件完全没有用到的包含指令变暗显示
+
+若某条包含指令引入的头文件不提供任何该文件直接使用的内容，该指令会被标记为多余并变暗显示，同时提供将其删除的快速修复。
+
+```case
+tests/diagnostics/includes/01_unused_include
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**缺失的包含指令**
+
+`missing_includes = true` 会指出文件用到却未包含的内容
+
+若文件用到的某个名称来自只经由另一条包含指令间接引入的头文件，该名称会被指出；对应的快速修复会在文件顶部的包含指令之后包含该头文件。
+
+```case
+tests/diagnostics/includes/02_missing_include
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**宏也算作使用**
+
+文件展开或检测过其宏的头文件视为已使用
+
+与用到名称一样，文件展开某个宏或在 `#if` 中检测某个宏，都算作使用了定义该宏的头文件。
+
+```case
+tests/diagnostics/includes/03_macro_uses
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**保留包含指令**
+
+标有 `IWYU pragma: keep` 的包含指令永远不会被报告为未使用
+
+带有 `// IWYU pragma: keep` 注释的包含指令会被保留：有的头文件被包含，是为了包含它所产生的效果，而不是为了它声明的内容。
+
+```case
+tests/diagnostics/includes/04_keep_pragma
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**私有头文件**
+
+标为私有的头文件通过它指明的头文件来包含
+
+若声明了文件所用内容的头文件中写有 `// IWYU pragma: private, include "…"`，快速修复会改为包含它指明的头文件。
+
+```case
+tests/diagnostics/includes/05_private_header
+```
+
+<!-- END CAPABILITY -->
+
+<!-- BEGIN CAPABILITY: supported -->
+
+**标准库头文件**
+
+以尖括号包含的头文件中，只检查标准库头文件
+
+未使用的标准库头文件与其他头文件一样会被报告，而以尖括号包含的其他库的头文件则不予处理。
+
+```case
+tests/diagnostics/includes/06_standard_headers
+```
+
+<!-- END CAPABILITY -->
+
+<!-- END GENERATED ITEMS -->
+
+- 两者默认均关闭，分别由 `[diagnostics]` 中的 `unused_includes` 和 `missing_includes` 选项开启。
+- 与 clangd 一样，写在被预处理器跳过的 `#include` 中的头文件永远不会被报告为缺失。
+- 只能在包含方的上下文中编译的头文件不会显示这两类诊断，`clice lint` 也不会报告。
